@@ -1,0 +1,10 @@
+
+api/node_modules/
+api/package-lock.json
+api/.env
+api/uploads/
+
+
+app/node_modules/
+app/package-lock.json
+app/.env

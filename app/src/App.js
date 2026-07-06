@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
+import Pusher from 'pusher-js';
+
+
+
+const pusher = new Pusher(process.env.REACT_APP_PUSHER_KEY, {
+  cluster: process.env.REACT_APP_PUSHER_CLUSTER,
+  forceTLS: true,
+});
+
+
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -18,6 +28,29 @@ function App() {
   useEffect(() => {
     fetchMessages();
   }, []);
+
+  useEffect(() => {
+
+  const channel = pusher.subscribe("messages-channel");
+
+  channel.bind("new-message", (createdMessage) => {
+     setMessages((prev) => {
+          if (prev.some((msg) => msg.id === createdMessage.id)) {
+            return prev;
+          }
+          return [...prev, createdMessage];
+        });
+  });
+
+  channel.bind("message-deleted", (deletedMessage) => {
+     setMessages((prev) => prev.filter((msg) => msg.id !== deletedMessage.id));
+  })
+
+  return () => {
+    channel.unbind_all();
+    pusher.unsubscribe("messages-channel");
+  };
+}, []);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -109,20 +142,11 @@ function App() {
           username: username.trim(),
           message: messageText.trim(),
         });
-        createdMessage = response.data?.message;
+        
       }
 
       setMessageText('');
-
-      // Refresh messages to show the new one
-      if (createdMessage) {
-        setMessages((prev) => {
-          if (prev.some((msg) => msg.id === createdMessage.id)) {
-            return prev;
-          }
-          return [...prev, createdMessage];
-        });
-      }
+  
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to send message');
       console.error('Error sending message:', err);
@@ -138,7 +162,7 @@ function App() {
 
     try {
       await axios.delete(`${API_BASE_URL}/api/messages/${messageId}`);
-      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+     
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete message');
       console.error('Error deleting message:', err);

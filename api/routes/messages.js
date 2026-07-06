@@ -3,6 +3,7 @@ const router = express.Router();
 const Message = require('../models/Message');
 const upload = require('../middleware/upload');
 const path = require('path');
+const pusherClient = require('../config/pusher');
 
 // Get all messages
 router.get('/', async (req, res) => {
@@ -39,6 +40,8 @@ router.post('/', async (req, res) => {
 
     const newMessage = await Message.create(username, message.trim());
 
+    await pusherClient.trigger('messages-channel', 'new-message', newMessage);
+
     res.status(201).json({ success: true, message: newMessage });
   } catch (error) {
     console.error('Error creating message:', error);
@@ -70,6 +73,8 @@ router.post('/with-image', upload.single('image'), async (req, res) => {
     const messageText = message ? message.trim() : '';
 
     const newMessage = await Message.create(username, messageText, imageUrl);
+
+    await pusherClient.trigger('messages-channel', 'new-message', newMessage);
 
     res.status(201).json({ success: true, message: newMessage });
   } catch (error) {
@@ -114,6 +119,8 @@ router.get('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const deletedMessage = await Message.delete(req.params.id);
+
+    await pusherClient.trigger('messages-channel', 'message-deleted', deletedMessage);
     
     if (!deletedMessage) {
       return res.status(404).json({ 
