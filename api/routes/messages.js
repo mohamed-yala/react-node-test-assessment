@@ -19,6 +19,19 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/search', async (req, res) => {
+  try {
+    if (!req.query.q) {
+      return res.status(400).json({ success: false, error: 'Search term is required' });
+    }
+    const messages = await Message.search(req.query.q);
+    res.json({ success: true, messages });
+  }catch (error) {  
+    console.error('Error searching messages:', error);
+    res.status(500).json({ success: false, error: 'Failed to search messages' });
+  }
+})
+
 // Create a new text message
 router.post('/', async (req, res) => {
   try {

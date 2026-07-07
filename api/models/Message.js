@@ -75,6 +75,19 @@ class Message {
     }
   }
 
+  static async getSearched(searchTerm) {
+    try {
+      const lowerCaseTerm = searchTerm.trim().toLowerCase();
+      const filtered = messages.filter(msg => 
+        msg.message.toLowerCase().trim().includes(lowerCaseTerm)
+      ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 100);
+      return filtered;
+    } catch (error) {
+      console.error('Error searching messages:', error);
+      throw error;
+    }
+  }
+
   // Delete a message
   static async delete(id) {
     try {

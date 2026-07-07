@@ -21,9 +21,11 @@ function App() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [term, setTerm] = useState('');
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     fetchMessages();
@@ -174,11 +176,36 @@ function App() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleInputChange = (e) => {
+    clearTimeout(timerRef.current);
+    setTerm(e.target.value);
+    if (e.target.value.trim() === '') {
+      fetchMessages();
+      return;
+    }
+    timerRef.current = setTimeout(async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/messages/search`, {
+          params: { q: e.target.value },
+        });
+        setMessages(response.data.messages || []);
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to search messages');
+        console.error('Error searching messages:', err);
+      }
+    }, 300);
+  }
+
   return (
     <div className="App">
       <header className="App-header">
+        <div>
         <h1>💬 Chat App</h1>
         <p>Send messages and share images</p>
+        </div>
+        <input value={term} onChange={handleInputChange} placeholder="Search messages..." className='search-input'/>
+        
+
       </header>
 
       <main className="chat-container">
